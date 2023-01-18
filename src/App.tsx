@@ -10,13 +10,13 @@ import ReactDOMClient from 'react-dom/client';
 import styled, { createGlobalStyle } from 'styled-components';
 import shuffle from 'lodash/shuffle';
 import {
-  useFocusable,
   init,
   FocusContext,
   FocusDetails,
   FocusableComponentLayout,
   KeyPressDetails
 } from './index';
+import { useNavigatableParent, useNavigatableChild } from './useNavigatable';
 
 const logo = require('../logo.png').default;
 
@@ -84,6 +84,7 @@ const assets = [
 
 interface MenuItemBoxProps {
   focused: boolean;
+  hovered: boolean;
 }
 
 const MenuItemBox = styled.div<MenuItemBoxProps>`
@@ -96,12 +97,13 @@ const MenuItemBox = styled.div<MenuItemBoxProps>`
   box-sizing: border-box;
   border-radius: 7px;
   margin-bottom: 37px;
+  cursor: pointer;
 `;
 
 function MenuItem() {
-  const { ref, focused } = useFocusable();
+  const { ref, focused, hovered } = useNavigatableChild({ requireFocus: false });
 
-  return <MenuItemBox ref={ref} focused={focused} />;
+  return <MenuItemBox ref={ref} focused={focused} hovered={hovered} />;
 }
 
 interface MenuWrapperProps {
@@ -141,7 +143,7 @@ function Menu({ focusKey: focusKeyParam }: MenuProps) {
     // resume, -- to resume all navigation events
     // updateAllLayouts, -- to force update all layouts when needed
     // getCurrentFocusKey -- to get the current focus key
-  } = useFocusable({
+  } = useNavigatableParent({
     focusable: true,
     saveLastFocusedChild: false,
     trackChildren: true,
@@ -179,22 +181,28 @@ const AssetWrapper = styled.div`
   margin-right: 22px;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
+  height: 175px;
 `;
 
 interface AssetBoxProps {
   focused: boolean;
   color: string;
+  hovered: boolean;
 }
 
 const AssetBox = styled.div<AssetBoxProps>`
-  width: 225px;
-  height: 127px;
+  width:  225px;
+  height: ${({ hovered }) => ( hovered ? '137px' : '127px')};;
   background-color: ${({ color }) => color};
   border-color: white;
   border-style: solid;
   border-width: ${({ focused }) => (focused ? '6px' : 0)};
   box-sizing: border-box;
   border-radius: 7px;
+  transition: width 0.2s;
+  transition: height 0.2s;
+  cursor: pointer;
 `;
 
 const AssetTitle = styled.div`
@@ -217,9 +225,10 @@ interface AssetProps {
 }
 
 function Asset({ title, color, onEnterPress, onFocus }: AssetProps) {
-  const { ref, focused } = useFocusable({
+  const { ref, focused, hovered } = useNavigatableChild({
     onEnterPress,
     onFocus,
+    requireFocus: true,
     extraProps: {
       title,
       color
@@ -228,7 +237,7 @@ function Asset({ title, color, onEnterPress, onFocus }: AssetProps) {
 
   return (
     <AssetWrapper ref={ref}>
-      <AssetBox color={color} focused={focused} />
+      <AssetBox focused={focused} color={color} hovered={hovered}/>
       <AssetTitle>{title}</AssetTitle>
     </AssetWrapper>
   );
@@ -275,7 +284,7 @@ function ContentRow({
   onAssetPress,
   onFocus
 }: ContentRowProps) {
-  const { ref, focusKey } = useFocusable({
+  const { ref, focusKey } = useNavigatableParent({
     onFocus
   });
 
@@ -363,7 +372,7 @@ const ScrollingRows = styled.div`
 `;
 
 function Content() {
-  const { ref, focusKey } = useFocusable();
+  const { ref, focusKey } = useNavigatableParent();
 
   const [selectedAsset, setSelectedAsset] = useState(null);
 
@@ -414,8 +423,6 @@ function Content() {
 
 const AppContainer = styled.div`
   background-color: #221c35;
-  width: 1440px;
-  height: 810px;
   display: flex;
   flex-direction: row;
 `;
